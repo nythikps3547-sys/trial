@@ -4,26 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>NetVital Reminders</title>
+  <title>NetVital Reminder</title>
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f2f2f2;
+      background: #eef4ff;
       margin: 0;
       padding: 20px;
     }
 
-    .container {
-      max-width: 500px;
+    .box {
+      max-width: 450px;
       margin: 40px auto;
       background: white;
       padding: 25px;
       border-radius: 15px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     }
 
-    h1 {
+    h1, h2 {
       text-align: center;
     }
 
@@ -31,47 +31,63 @@
       width: 100%;
       box-sizing: border-box;
       padding: 12px;
-      margin: 8px 0 15px;
+      margin: 7px 0 15px;
       border: 1px solid #ccc;
-      border-radius: 6px;
+      border-radius: 7px;
       font-size: 16px;
     }
 
     button {
       width: 100%;
       padding: 12px;
+      margin: 7px 0;
       border: none;
-      border-radius: 6px;
-      background: #007bff;
+      border-radius: 7px;
+      background: #1677ff;
       color: white;
       font-size: 16px;
       cursor: pointer;
     }
 
     button:hover {
-      background: #0056b3;
+      background: #095dcc;
     }
 
-    #message {
-      margin-top: 15px;
+    .logout {
+      background: #777;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #status {
       text-align: center;
+      margin: 15px 0;
       font-weight: bold;
+    }
+
+    .reminder {
+      background: #f1f6ff;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="container">
+  <!-- LOGIN -->
+  <div class="box" id="loginBox">
 
-    <h1>NetVital</h1>
-
+    <h1>💧 NetVital</h1>
     <h2>Login</h2>
 
     <input
-      type="text"
-      id="username"
-      placeholder="Username"
+      type="email"
+      id="email"
+      placeholder="Email"
     >
 
     <input
@@ -80,33 +96,360 @@
       placeholder="Password"
     >
 
-    <button onclick="login()">Login</button>
+    <button id="loginButton">Login</button>
 
-    <p id="message"></p>
+    <p id="loginStatus"></p>
 
   </div>
 
-  <script>
-    function login() {
 
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
+  <!-- REMINDER PAGE -->
+  <div class="box hidden" id="appBox">
 
-      if (username === "nythik" && password === "9069") {
+    <h1>💧 NetVital</h1>
 
-        document.getElementById("message").textContent =
-          "Login successful!";
+    <p id="userText"></p>
 
-        document.getElementById("message").style.color = "green";
+    <h2>Add Reminder</h2>
+
+    <label>Reminder message</label>
+
+    <input
+      type="text"
+      id="reminderText"
+      value="Drink water"
+    >
+
+    <label>Date</label>
+
+    <input
+      type="date"
+      id="reminderDate"
+    >
+
+    <label>Time</label>
+
+    <input
+      type="time"
+      id="reminderTime"
+    >
+
+    <button id="addButton">
+      ➕ Add Reminder
+    </button>
+
+    <button id="notificationButton">
+      🔔 Enable Notifications
+    </button>
+
+    <p id="status"></p>
+
+    <h2>Reminders</h2>
+
+    <div id="reminders"></div>
+
+    <button class="logout" id="logoutButton">
+      Logout
+    </button>
+
+  </div>
+
+
+  <!-- FIREBASE -->
+  <script type="module">
+
+    import { initializeApp } from
+      "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut
+    } from
+      "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+    import {
+      getDatabase,
+      ref,
+      push,
+      onValue
+    } from
+      "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+
+    // YOUR FIREBASE CONFIGURATION
+
+    const firebaseConfig = {
+
+      apiKey: "AIzaSyAEle7t2uxecqThWzbjV5RX8wEcXqnJvZM",
+
+      authDomain:
+        "netvital-ca1d1.firebaseapp.com",
+
+      projectId:
+        "netvital-ca1d1",
+
+      storageBucket:
+        "netvital-ca1d1.firebasestorage.app",
+
+      messagingSenderId:
+        "199895359034",
+
+      appId:
+        "1:199895359034:web:c997ee869b549578615f03"
+
+    };
+
+
+    // START FIREBASE
+
+    const app = initializeApp(firebaseConfig);
+
+    const auth = getAuth(app);
+
+    const database = getDatabase(app);
+
+
+    // ELEMENTS
+
+    const loginBox =
+      document.getElementById("loginBox");
+
+    const appBox =
+      document.getElementById("appBox");
+
+    const loginStatus =
+      document.getElementById("loginStatus");
+
+    const status =
+      document.getElementById("status");
+
+    const remindersDiv =
+      document.getElementById("reminders");
+
+
+    // LOGIN
+
+    document
+      .getElementById("loginButton")
+      .addEventListener("click", async () => {
+
+        const email =
+          document.getElementById("email").value;
+
+        const password =
+          document.getElementById("password").value;
+
+        if (!email || !password) {
+
+          loginStatus.textContent =
+            "Enter email and password.";
+
+          return;
+        }
+
+        try {
+
+          await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+
+          loginStatus.textContent =
+            "";
+
+        } catch (error) {
+
+          loginStatus.textContent =
+            "Login failed: " + error.message;
+
+        }
+
+      });
+
+
+    // CHECK LOGIN
+
+    onAuthStateChanged(auth, (user) => {
+
+      if (user) {
+
+        loginBox.classList.add("hidden");
+
+        appBox.classList.remove("hidden");
+
+        document.getElementById("userText").textContent =
+          "Logged in as: " + user.email;
+
+        loadReminders(user.uid);
 
       } else {
 
-        document.getElementById("message").textContent =
-          "Wrong username or password.";
+        loginBox.classList.remove("hidden");
 
-        document.getElementById("message").style.color = "red";
+        appBox.classList.add("hidden");
+
       }
+
+    });
+
+
+    // ADD REMINDER
+
+    document
+      .getElementById("addButton")
+      .addEventListener("click", async () => {
+
+        const user = auth.currentUser;
+
+        if (!user) return;
+
+        const text =
+          document.getElementById("reminderText").value;
+
+        const date =
+          document.getElementById("reminderDate").value;
+
+        const time =
+          document.getElementById("reminderTime").value;
+
+        if (!text || !date || !time) {
+
+          status.textContent =
+            "Please enter message, date and time.";
+
+          return;
+        }
+
+        try {
+
+          const reminderRef =
+            ref(database, "reminders");
+
+          await push(reminderRef, {
+
+            message: text,
+
+            date: date,
+
+            time: time,
+
+            createdBy: user.uid,
+
+            createdAt: Date.now()
+
+          });
+
+          status.textContent =
+            "✅ Reminder added!";
+
+        } catch (error) {
+
+          status.textContent =
+            "❌ Error: " + error.message;
+
+        }
+
+      });
+
+
+    // LOAD REMINDERS FROM FIREBASE
+
+    function loadReminders(uid) {
+
+      const reminderRef =
+        ref(database, "reminders");
+
+      onValue(reminderRef, (snapshot) => {
+
+        remindersDiv.innerHTML = "";
+
+        const data = snapshot.val();
+
+        if (!data) {
+
+          remindersDiv.innerHTML =
+            "<p>No reminders yet.</p>";
+
+          return;
+
+        }
+
+        Object.entries(data).forEach(
+          ([id, reminder]) => {
+
+            const div =
+              document.createElement("div");
+
+            div.className = "reminder";
+
+            div.innerHTML = `
+              💧 <strong>${reminder.message}</strong><br>
+              📅 ${reminder.date}<br>
+              ⏰ ${reminder.time}
+            `;
+
+            remindersDiv.appendChild(div);
+
+          }
+        );
+
+      });
+
     }
+
+
+    // NOTIFICATIONS
+
+    document
+      .getElementById("notificationButton")
+      .addEventListener("click", async () => {
+
+        if (!("Notification" in window)) {
+
+          status.textContent =
+            "This browser does not support notifications.";
+
+          return;
+
+        }
+
+        const permission =
+          await Notification.requestPermission();
+
+        if (permission === "granted") {
+
+          status.textContent =
+            "🔔 Notifications enabled!";
+
+          new Notification("NetVital", {
+
+            body: "Notifications are working!"
+
+          });
+
+        } else {
+
+          status.textContent =
+            "Notifications were not allowed.";
+
+        }
+
+      });
+
+
+    // LOGOUT
+
+    document
+      .getElementById("logoutButton")
+      .addEventListener("click", async () => {
+
+        await signOut(auth);
+
+      });
+
   </script>
 
 </body>
