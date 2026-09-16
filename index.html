@@ -4,84 +4,82 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>NetVital Reminder</title>
+  <title>NetVital Reminders</title>
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #eef4ff;
+      background: #f2f5f8;
       margin: 0;
       padding: 20px;
     }
 
-    .box {
-      max-width: 450px;
-      margin: 40px auto;
+    .container {
+      max-width: 500px;
+      margin: auto;
       background: white;
       padding: 25px;
       border-radius: 15px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     }
 
-    h1, h2 {
+    h1 {
       text-align: center;
     }
 
-    input {
+    input, button {
       width: 100%;
       box-sizing: border-box;
       padding: 12px;
-      margin: 7px 0 15px;
+      margin-top: 10px;
+      border-radius: 8px;
       border: 1px solid #ccc;
-      border-radius: 7px;
       font-size: 16px;
     }
 
     button {
-      width: 100%;
-      padding: 12px;
-      margin: 7px 0;
-      border: none;
-      border-radius: 7px;
-      background: #1677ff;
-      color: white;
-      font-size: 16px;
       cursor: pointer;
+      border: none;
+      background: #1976d2;
+      color: white;
     }
 
     button:hover {
-      background: #095dcc;
+      background: #125aa0;
     }
 
     .logout {
-      background: #777;
+      background: #d32f2f;
     }
 
-    .hidden {
+    .reminder {
+      background: #f5f5f5;
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    #app {
       display: none;
     }
 
     #status {
+      margin-top: 15px;
       text-align: center;
-      margin: 15px 0;
       font-weight: bold;
-    }
-
-    .reminder {
-      background: #f1f6ff;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 8px;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- LOGIN -->
-  <div class="box" id="loginBox">
+<div class="container">
 
-    <h1>💧 NetVital</h1>
+  <h1>NetVital</h1>
+
+  <!-- LOGIN -->
+  <div id="login">
+
     <h2>Login</h2>
 
     <input
@@ -96,269 +94,501 @@
       placeholder="Password"
     >
 
-    <button id="loginButton">Login</button>
-
-    <p id="loginStatus"></p>
+    <button id="loginBtn">
+      Login
+    </button>
 
   </div>
 
 
-  <!-- REMINDER PAGE -->
-  <div class="box hidden" id="appBox">
-
-    <h1>💧 NetVital</h1>
-
-    <p id="userText"></p>
+  <!-- APPLICATION -->
+  <div id="app">
 
     <h2>Add Reminder</h2>
 
-    <label>Reminder message</label>
-
     <input
       type="text"
-      id="reminderText"
-      value="Drink water"
+      id="message"
+      placeholder="Reminder message e.g. Drink water"
     >
 
     <label>Date</label>
 
     <input
       type="date"
-      id="reminderDate"
+      id="date"
     >
 
     <label>Time</label>
 
     <input
       type="time"
-      id="reminderTime"
+      id="time"
     >
 
-    <button id="addButton">
-      ➕ Add Reminder
+    <button id="notificationBtn">
+      Enable Notifications
     </button>
 
-    <button id="notificationButton">
-      🔔 Enable Notifications
+    <button id="addBtn">
+      Add Reminder
     </button>
 
-    <p id="status"></p>
-
-    <h2>Reminders</h2>
-
-    <div id="reminders"></div>
-
-    <button class="logout" id="logoutButton">
+    <button id="logoutBtn" class="logout">
       Logout
     </button>
 
+    <div id="status"></div>
+
+    <h2>Your Reminders</h2>
+
+    <div id="reminders"></div>
+
   </div>
 
-
-  <!-- FIREBASE -->
-  <script type="module">
-
-    import { initializeApp } from
-      "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-
-    import {
-      getAuth,
-      signInWithEmailAndPassword,
-      onAuthStateChanged,
-      signOut
-    } from
-      "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-
-    import {
-      getDatabase,
-      ref,
-      push,
-      onValue
-    } from
-      "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+</div>
 
 
-    // YOUR FIREBASE CONFIGURATION
+<script type="module">
 
-    const firebaseConfig = {
-  apiKey: "AIzaSyAEle7t2uxecqThWzbjV5RX8wEcXqnJvZM",
-  authDomain: "netvital-ca1d1.firebaseapp.com",
-  databaseURL: "https://netvital-ca1d1-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "netvital-ca1d1",
-  storageBucket: "netvital-ca1d1.firebasestorage.app",
-  messagingSenderId: "199895359034",
-  appId: "1:199895359034:web:c997ee869b549578615f03"
-};
+  import {
+    initializeApp
+  } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
-   
+  import {
+    getDatabase,
+    ref,
+    push,
+    set,
+    onValue
+  } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
-
-    // START FIREBASE
-
-    const app = initializeApp(firebaseConfig);
-
-    const auth = getAuth(app);
-
-    const database = getDatabase(app);
-
-
-    // ELEMENTS
-
-    const loginBox =
-      document.getElementById("loginBox");
-
-    const appBox =
-      document.getElementById("appBox");
-
-    const loginStatus =
-      document.getElementById("loginStatus");
-
-    const status =
-      document.getElementById("status");
-
-    const remindersDiv =
-      document.getElementById("reminders");
+  import {
+    getMessaging,
+    getToken,
+    onMessage
+  } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-messaging.js";
 
 
-    // LOGIN
+  // ==============================
+  // FIREBASE CONFIG
+  // ==============================
 
-    document
-      .getElementById("loginButton")
-      .addEventListener("click", async () => {
+  const firebaseConfig = {
 
-        const email =
-          document.getElementById("email").value;
+    apiKey: "AIzaSyAEle7t2uxecqThWzbjV5RX8wEcXqnJvZM",
 
-        const password =
-          document.getElementById("password").value;
+    authDomain: "netvital-ca1d1.firebaseapp.com",
 
-        if (!email || !password) {
+    databaseURL:
+      "https://netvital-ca1d1-default-rtdb.asia-southeast1.firebasedatabase.app",
 
-          loginStatus.textContent =
-            "Enter email and password.";
+    projectId: "netvital-ca1d1",
+
+    storageBucket:
+      "netvital-ca1d1.firebasestorage.app",
+
+    messagingSenderId: "199895359034",
+
+    appId:
+      "1:199895359034:web:c997ee869b549578615f03"
+  };
+
+
+  // ==============================
+  // VAPID KEY
+  // ==============================
+
+  // IMPORTANT:
+  // Put your Firebase Web Push public key here.
+
+  const VAPID_KEY = "PASTE_YOUR_VAPID_PUBLIC_KEY_HERE";
+
+
+  // ==============================
+  // INITIALIZE FIREBASE
+  // ==============================
+
+  const app = initializeApp(firebaseConfig);
+
+  const auth = getAuth(app);
+
+  const database = getDatabase(app);
+
+  const messaging = getMessaging(app);
+
+
+  // ==============================
+  // HTML ELEMENTS
+  // ==============================
+
+  const loginDiv =
+    document.getElementById("login");
+
+  const appDiv =
+    document.getElementById("app");
+
+  const emailInput =
+    document.getElementById("email");
+
+  const passwordInput =
+    document.getElementById("password");
+
+  const loginBtn =
+    document.getElementById("loginBtn");
+
+  const logoutBtn =
+    document.getElementById("logoutBtn");
+
+  const notificationBtn =
+    document.getElementById("notificationBtn");
+
+  const addBtn =
+    document.getElementById("addBtn");
+
+  const messageInput =
+    document.getElementById("message");
+
+  const dateInput =
+    document.getElementById("date");
+
+  const timeInput =
+    document.getElementById("time");
+
+  const remindersDiv =
+    document.getElementById("reminders");
+
+  const statusDiv =
+    document.getElementById("status");
+
+
+  // ==============================
+  // LOGIN
+  // ==============================
+
+  loginBtn.addEventListener("click", async () => {
+
+    const email =
+      emailInput.value.trim();
+
+    const password =
+      passwordInput.value;
+
+    if (!email || !password) {
+
+      statusDiv.textContent =
+        "Enter email and password.";
+
+      return;
+    }
+
+    try {
+
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      statusDiv.textContent =
+        "Login successful.";
+
+    } catch (error) {
+
+      console.error(error);
+
+      statusDiv.textContent =
+        "Login failed: " + error.message;
+    }
+
+  });
+
+
+  // ==============================
+  // AUTH STATE
+  // ==============================
+
+  onAuthStateChanged(auth, async (user) => {
+
+    if (user) {
+
+      loginDiv.style.display = "none";
+
+      appDiv.style.display = "block";
+
+      statusDiv.textContent =
+        "Logged in as " + user.email;
+
+      loadReminders(user.uid);
+
+    } else {
+
+      loginDiv.style.display = "block";
+
+      appDiv.style.display = "none";
+
+    }
+
+  });
+
+
+  // ==============================
+  // LOGOUT
+  // ==============================
+
+  logoutBtn.addEventListener("click", async () => {
+
+    await signOut(auth);
+
+  });
+
+
+  // ==============================
+  // ENABLE NOTIFICATIONS
+  // ==============================
+
+  notificationBtn.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        if (!("Notification" in window)) {
+
+          statusDiv.textContent =
+            "This browser does not support notifications.";
 
           return;
         }
 
-        try {
 
-          await signInWithEmailAndPassword(
-            auth,
-            email,
-            password
-          );
+        const permission =
+          await Notification.requestPermission();
 
-          loginStatus.textContent =
-            "";
 
-        } catch (error) {
+        if (permission !== "granted") {
 
-          loginStatus.textContent =
-            "Login failed: " + error.message;
+          statusDiv.textContent =
+            "Notification permission was not granted.";
 
+          return;
         }
 
-      });
+
+        // Register Firebase service worker
+
+        const registration =
+          await navigator.serviceWorker.register(
+            "./firebase-messaging-sw.js"
+          );
 
 
-    // CHECK LOGIN
+        // Get FCM token
 
-    onAuthStateChanged(auth, (user) => {
-
-      if (user) {
-
-        loginBox.classList.add("hidden");
-
-        appBox.classList.remove("hidden");
-
-        document.getElementById("userText").textContent =
-          "Logged in as: " + user.email;
-
-        loadReminders(user.uid);
-
-      } else {
-
-        loginBox.classList.remove("hidden");
-
-        appBox.classList.add("hidden");
-
-      }
-
-    });
+        const token =
+          await getToken(
+            messaging,
+            {
+              vapidKey: VAPID_KEY,
+              serviceWorkerRegistration:
+                registration
+            }
+          );
 
 
-    // ADD REMINDER
+        if (!token) {
 
-    document
-      .getElementById("addButton")
-      .addEventListener("click", async () => {
+          statusDiv.textContent =
+            "Could not get notification token.";
+
+          return;
+        }
+
 
         const user = auth.currentUser;
 
-        if (!user) return;
+        if (!user) {
 
-        const text =
-          document.getElementById("reminderText").value;
-
-        const date =
-          document.getElementById("reminderDate").value;
-
-        const time =
-          document.getElementById("reminderTime").value;
-
-        if (!text || !date || !time) {
-
-          status.textContent =
-            "Please enter message, date and time.";
+          statusDiv.textContent =
+            "Please login first.";
 
           return;
         }
 
-        try {
 
-          const reminderRef =
-            ref(database, "reminders");
+        // Save device token
 
-          await push(reminderRef, {
+        const tokenKey =
+          btoa(token)
+            .replaceAll("/", "_")
+            .replaceAll("+", "-")
+            .replaceAll("=", "");
 
-            message: text,
+
+        await set(
+          ref(
+            database,
+            "deviceTokens/" +
+            user.uid +
+            "/" +
+            tokenKey
+          ),
+          {
+            token: token,
+            createdAt: Date.now()
+          }
+        );
+
+
+        statusDiv.textContent =
+          "Notifications enabled on this device.";
+
+      } catch (error) {
+
+        console.error(error);
+
+        statusDiv.textContent =
+          "Notification error: " + error.message;
+      }
+
+    }
+  );
+
+
+  // ==============================
+  // ADD REMINDER
+  // ==============================
+
+  addBtn.addEventListener(
+    "click",
+    async () => {
+
+      const user = auth.currentUser;
+
+      if (!user) {
+
+        statusDiv.textContent =
+          "Please login first.";
+
+        return;
+      }
+
+
+      const message =
+        messageInput.value.trim();
+
+      const date =
+        dateInput.value;
+
+      const time =
+        timeInput.value;
+
+
+      if (!message || !date || !time) {
+
+        statusDiv.textContent =
+          "Please enter message, date and time.";
+
+        return;
+      }
+
+
+      // Convert local date/time to timestamp
+
+      const localDate =
+        new Date(
+          `${date}T${time}`
+        );
+
+
+      const timestamp =
+        localDate.getTime();
+
+
+      if (timestamp <= Date.now()) {
+
+        statusDiv.textContent =
+          "Please select a future time.";
+
+        return;
+      }
+
+
+      try {
+
+        const reminderRef =
+          push(
+            ref(database, "reminders")
+          );
+
+
+        await set(
+          reminderRef,
+          {
+
+            message: message,
 
             date: date,
 
             time: time,
 
-            createdBy: user.uid,
+            timestamp: timestamp,
+
+            uid: user.uid,
+
+            sent: false,
 
             createdAt: Date.now()
 
-          });
-
-          status.textContent =
-            "✅ Reminder added!";
-
-        } catch (error) {
-
-          status.textContent =
-            "❌ Error: " + error.message;
-
-        }
-
-      });
+          }
+        );
 
 
-    // LOAD REMINDERS FROM FIREBASE
+        messageInput.value = "";
 
-    function loadReminders(uid) {
+        statusDiv.textContent =
+          "Reminder added successfully.";
 
-      const reminderRef =
-        ref(database, "reminders");
+      } catch (error) {
 
-      onValue(reminderRef, (snapshot) => {
+        console.error(error);
+
+        statusDiv.textContent =
+          "Could not save reminder: " +
+          error.message;
+      }
+
+    }
+  );
+
+
+  // ==============================
+  // LOAD REMINDERS
+  // ==============================
+
+  function loadReminders(uid) {
+
+    const remindersRef =
+      ref(database, "reminders");
+
+
+    onValue(
+      remindersRef,
+      (snapshot) => {
 
         remindersDiv.innerHTML = "";
 
-        const data = snapshot.val();
+
+        const data =
+          snapshot.val();
+
 
         if (!data) {
 
@@ -366,83 +596,108 @@
             "<p>No reminders yet.</p>";
 
           return;
-
         }
 
-        Object.entries(data).forEach(
-          ([id, reminder]) => {
+
+        Object.entries(data)
+          .forEach(([id, reminder]) => {
+
+            if (reminder.uid !== uid) {
+              return;
+            }
+
 
             const div =
               document.createElement("div");
 
-            div.className = "reminder";
+            div.className =
+              "reminder";
+
+
+            const reminderDate =
+              new Date(
+                reminder.timestamp
+              );
+
 
             div.innerHTML = `
-              💧 <strong>${reminder.message}</strong><br>
-              📅 ${reminder.date}<br>
-              ⏰ ${reminder.time}
+
+              <strong>
+                ${escapeHtml(reminder.message)}
+              </strong>
+
+              <br>
+
+              ${reminderDate.toLocaleString()}
+
+              <br>
+
+              Status:
+              ${reminder.sent ? "Sent" : "Waiting"}
+
             `;
+
 
             remindersDiv.appendChild(div);
 
+          });
+
+      }
+    );
+
+  }
+
+
+  // ==============================
+  // SECURITY FOR DISPLAYED TEXT
+  // ==============================
+
+  function escapeHtml(text) {
+
+    const div =
+      document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+
+  }
+
+
+  // ==============================
+  // FOREGROUND FCM MESSAGE
+  // ==============================
+
+  onMessage(
+    messaging,
+    (payload) => {
+
+      console.log(
+        "Foreground message:",
+        payload
+      );
+
+
+      if (
+        payload.notification
+      ) {
+
+        new Notification(
+          payload.notification.title ||
+          "NetVital Reminder",
+          {
+            body:
+              payload.notification.body ||
+              "You have a reminder."
           }
         );
 
-      });
+      }
 
     }
+  );
 
-
-    // NOTIFICATIONS
-
-    document
-      .getElementById("notificationButton")
-      .addEventListener("click", async () => {
-
-        if (!("Notification" in window)) {
-
-          status.textContent =
-            "This browser does not support notifications.";
-
-          return;
-
-        }
-
-        const permission =
-          await Notification.requestPermission();
-
-        if (permission === "granted") {
-
-          status.textContent =
-            "🔔 Notifications enabled!";
-
-          new Notification("NetVital", {
-
-            body: "Notifications are working!"
-
-          });
-
-        } else {
-
-          status.textContent =
-            "Notifications were not allowed.";
-
-        }
-
-      });
-
-
-    // LOGOUT
-
-    document
-      .getElementById("logoutButton")
-      .addEventListener("click", async () => {
-
-        await signOut(auth);
-
-      });
-
-  </script>
+</script>
 
 </body>
 </html>
