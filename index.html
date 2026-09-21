@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetVital</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;background:#000;color:#fff;font-family:Arial,sans-serif;
+  min-height:100vh;padding:20px
+}
+.container{max-width:700px;margin:auto}
+h1{text-align:center;font-size:42px}
+.card{
+  background:#111;border:1px solid #333;border-radius:18px;
+  padding:20px;margin:15px 0
+}
+input,button{
+  width:100%;padding:14px;margin-top:10px;border-radius:10px;
+  border:1px solid #444;font-size:16px
+}
+input{background:#1b1b1b;color:#fff}
+button{background:#fff;color:#000;font-weight:bold;cursor:pointer}
+.timer{
+  text-align:center;background:#111;border:1px solid #333;
+  border-radius:20px;padding:25px;margin-top:15px
+}
+.message{font-size:24px;font-weight:bold;overflow-wrap:anywhere}
+.time{font-size:60px;font-weight:bold;margin:20px 0}
+.delete{background:#800;color:#fff;border:0}
+#app{display:none}
+.status{text-align:center;color:#aaa;margin:10px}
+.error{color:#ff5555;text-align:center}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div id="login">
+  <h1>NetVital</h1>
+  <div class="card">
+    <h2>Login</h2>
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">LOGIN</button>
+    <p id="loginError" class="error"></p>
+  </div>
+</div>
+
+<div id="app">
+  <h1>NetVital</h1>
+
+  <div class="card">
+    <h2>Add Timer</h2>
+    <input id="message" placeholder="Message to send">
+    <input id="hours" type="number" min="0" value="0" placeholder="Hours">
+    <input id="minutes" type="number" min="0" value="0" placeholder="Minutes">
+    <input id="seconds" type="number" min="0" value="10" placeholder="Seconds">
+    <button onclick="addTimer()">ADD TIMER</button>
+    <button onclick="enableNotifications()">ENABLE NOTIFICATIONS</button>
+  </div>
+
+  <div id="status" class="status">Connecting...</div>
+  <div id="timers"></div>
+</div>
+
+</div>
+
+<script type="module">
+import {initializeApp}
+from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+
+import {
+  getDatabase, ref, push, set, onValue, remove
+}
+from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAEle7t2uxecqThWzbjV5RX8wEcXqnJvZM",
+  authDomain: "netvital-ca1d1.firebaseapp.com",
+  databaseURL: "https://netvital-ca1d1-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "netvital-ca1d1",
+  storageBucket: "netvital-ca1d1.firebasestorage.app",
+  messagingSenderId: "199895359034",
+  appId: "1:199895359034:web:c997ee869b549578615f03"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const USERNAME = "trial";
+const PASSWORD = "12345";
+
+let timers = {};
+const running = {};
+
+window.login = function(){
+  const u = document.getElementById("username").value.trim();
+  const p = document.getElementById("password").value;
+
+  if(u === USERNAME && p === PASSWORD){
+    document.getElementById("login").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    document.getElementById("status").textContent =
+      "Connected. Allow notifications on this device.";
+  }else{
+    document.getElementById("loginError").textContent =
+      "Wrong username or password.";
+  }
+};
+
+window.enableNotifications = async function(){
+  if(!("Notification" in window)){
+    alert("This browser does not support notifications.");
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+
+  if(permission === "granted"){
+    document.getElementById("status").textContent =
+      "🔔 Notifications enabled on this device.";
+  }else{
+    document.getElementById("status").textContent =
+      "Notifications were not allowed.";
+  }
+};
+
+window.addTimer = async function(){
+  const message = document.getElementById("message").value.trim();
+
+  const h = Number(document.getElementById("hours").value || 0);
+  const m = Number(document.getElementById("minutes").value || 0);
+  const s = Number(document.getElementById("seconds").value || 0);
+
+  const duration = ((h * 3600) + (m * 60) + s) * 1000;
+
+  if(!message){
+    alert("Enter a message.");
+    return;
+  }
+
+  if(duration <= 0){
+    alert("Set a timer greater than 0.");
+    return;
+  }
+
+  /*
+    IMPORTANT:
+    finishTime is stored in Firebase.
+    Every connected device therefore uses the
+    same exact finishing time.
+  */
+  const timerRef = push(ref(db, "timers"));
+
+  await set(timerRef, {
+    message: message,
+    finishTime: Date.now() + duration,
+    createdAt: Date.now()
+  });
+
+  document.getElementById("message").value = "";
+};
+
+const timersRef = ref(db, "timers");
+
+onValue(timersRef, snapshot => {
+  timers = snapshot.val() || {};
+  renderTimers();
+  document.getElementById("status").textContent =
+    "🟢 Connected — timers synchronized";
+});
+
+function renderTimers(){
+  const area = document.getElementById("timers");
+  area.innerHTML = "";
+
+  Object.entries(timers).forEach(([id, timer]) => {
+    createTimer(id, timer);
+  });
+}
+
+function createTimer(id, timer){
+  const card = document.createElement("div");
+  card.className = "timer";
+  card.id = "timer-" + id;
+
+  const message = document.createElement("div");
+  message.className = "message";
+  message.textContent = timer.message;
+
+  const time = document.createElement("div");
+  time.className = "time";
+  time.id = "time-" + id;
+
+  const deleteButton = document.createElement("button");
+  deleteButton.className = "delete";
+  deleteButton.textContent = "DELETE";
+  deleteButton.onclick = () => remove(ref(db, "timers/" + id));
+
+  card.appendChild(message);
+  card.appendChild(time);
+  card.appendChild(deleteButton);
+  document.getElementById("timers").appendChild(card);
+
+  if(!running[id]){
+    running[id] = true;
+    runTimer(id, timer);
+  }
+}
+
+function runTimer(id, timer){
+  function update(){
+    const timeElement = document.getElementById("time-" + id);
+
+    if(!timeElement){
+      return;
+    }
+
+    const remaining = timer.finishTime - Date.now();
+
+    if(remaining <= 0){
+      timeElement.textContent = "00:00:00";
+
+      showNotificationOnce(id, timer.message);
+
+      setTimeout(() => {
+        const card = document.getElementById("timer-" + id);
+        if(card) card.remove();
+      }, 1200);
+
+      delete running[id];
+      return;
+    }
+
+    const total = Math.floor(remaining / 1000);
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const seconds = total % 60;
+
+    timeElement.textContent =
+      String(hours).padStart(2,"0") + ":" +
+      String(minutes).padStart(2,"0") + ":" +
+      String(seconds).padStart(2,"0");
+
+    setTimeout(update, 250);
+  }
+
+  update();
+}
+
+/*
+  Each browser/device keeps its own notification record.
+  Therefore every connected device can display the message.
+*/
+function showNotificationOnce(id, message){
+  const key = "netvital-notified-" + id;
+
+  if(localStorage.getItem(key) === "yes"){
+    return;
+  }
+
+  localStorage.setItem(key, "yes");
+
+  if("Notification" in window &&
+     Notification.permission === "granted"){
+
+    new Notification("NetVital", {
+      body: message,
+      requireInteraction: true
+    });
+  }
+
+  /*
+    This also shows the message when the browser
+    refuses system notifications.
+  */
+  alert("NetVital\n\n" + message);
+}
+</script>
+</body>
+</html>
