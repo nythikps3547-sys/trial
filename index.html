@@ -1,577 +1,167 @@
 ```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Study Dashboard</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #eef3ff;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 650px;
-            margin: auto;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
-        }
-
-        h1 {
-            text-align: center;
-            color: #3155d9;
-        }
-
-        h2 {
-            margin-top: 5px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            margin: 7px 0;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 15px;
-        }
-
-        button {
-            padding: 11px 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 4px;
-            font-size: 14px;
-        }
-
-        .blue {
-            background: #3155d9;
-            color: white;
-        }
-
-        .red {
-            background: #e53935;
-            color: white;
-        }
-
-        /* Motivation */
-
-        #motivation {
-            background: #fff3cd;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        /* Timer */
-
-        .timer {
-            background: #000;
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-        }
-
-        #time {
-            font-size: 55px;
-            font-weight: bold;
-            letter-spacing: 3px;
-        }
-
-        .timer button {
-            background: white;
-            color: black;
-        }
-
-        /* Tasks */
-
-        ul {
-            padding: 0;
-        }
-
-        li {
-            list-style: none;
-            background: #f1f3f8;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 10px;
-        }
-
-        .task-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .subject {
-            color: #3155d9;
-            font-size: 13px;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-
-        .completed {
-            text-decoration: line-through;
-            opacity: 0.5;
-        }
-
-        .teacher-box {
-            background: #f5f0ff;
-        }
-
-        .empty {
-            text-align: center;
-            color: #777;
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="container">
-
-    <h1>📚 Study Dashboard</h1>
-
-
-    <!-- MOTIVATION -->
-
-    <div class="card">
-
-        <div id="motivation">
-            💪 You can do it!
-        </div>
-
-        <div style="text-align:center">
-
-            <button
-                class="blue"
-                onclick="newMotivation()">
-
-                💡 New Motivation
-
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <!-- TIMER -->
-
-    <div class="card">
-
-        <h2>⏱️ Study Timer</h2>
-
-        <div class="timer">
-
-            <div id="time">25:00</div>
-
-            <button onclick="startTimer()">
-                ▶ Start
-            </button>
-
-            <button onclick="pauseTimer()">
-                ⏸ Pause
-            </button>
-
-            <button onclick="resetTimer()">
-                🔄 Reset
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <!-- TEACHER -->
-
-    <div class="card teacher-box">
-
-        <h2>🤖 /teacher</h2>
-
-        <p>
-            Search a study topic in ChatGPT.
-        </p>
-
-        <input
-            type="text"
-            id="topicInput"
-            placeholder="Example: Ohm's Law">
-
-        <button
-            class="blue"
-            onclick="askTeacher()">
-
-            🤖 Ask /teacher
-
-        </button>
-
-    </div>
-
-
-    <!-- ADD TASK -->
-
-    <div class="card">
-
-        <h2>➕ Add Study Task</h2>
-
-        <select id="subject">
-
-            <option value="">
-                Select Subject
-            </option>
-
-            <option>📐 Mathematics</option>
-            <option>⚡ Physics</option>
-            <option>🧪 Chemistry</option>
-            <option>🧬 Biology</option>
-            <option>📖 English</option>
-            <option>💻 Computer Science</option>
-            <option>🌍 Social Science</option>
-            <option>📝 Other</option>
-
-        </select>
-
-        <input
-            type="text"
-            id="taskInput"
-            placeholder="Example: Complete chapter 3">
-
-        <button
-            class="blue"
-            onclick="addTask()">
-
-            ➕ Add Task
-
-        </button>
-
-    </div>
-
-
-    <!-- TASK LIST -->
-
-    <div class="card">
-
-        <h2>📋 My Tasks</h2>
-
-        <ul id="taskList"></ul>
-
-    </div>
-
-</div>
-
-
-<script>
-
-/* =========================
-   MOTIVATION
-========================= */
-
-const motivationWords = [
-
-    "💪 You can do it!",
-
-    "📚 One page at a time.",
-
-    "🔥 Keep going!",
-
-    "🎯 Focus on your goal.",
-
-    "⭐ Small progress is still progress.",
-
-    "🧠 Learn today, succeed tomorrow.",
-
-    "🚀 Don't give up!",
-
-    "🏆 Your hard work will pay off.",
-
-    "💡 Keep learning!",
-
-    "🌟 Believe in yourself."
-
-];
-
-
-function newMotivation() {
-
-    const random =
-        Math.floor(
-            Math.random() *
-            motivationWords.length
-        );
-
-    document.getElementById(
-        "motivation"
-    ).innerText =
-        motivationWords[random];
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Study Dashboard</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: #eef3ff;
+}
+
+.container {
+    max-width: 700px;
+    margin: auto;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+}
+
+h1 {
+    text-align: center;
+    color: #3155d9;
+}
+
+h2 {
+    margin-top: 5px;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 12px;
+    margin: 7px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+button {
+    padding: 11px 16px;
+    margin: 4px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:active {
+    transform: scale(0.97);
+}
+
+.blue {
+    background: #3155d9;
+    color: white;
+}
+
+.red {
+    background: #e53935;
+    color: white;
+}
+
+.green {
+    background: #2e7d32;
+    color: white;
+}
+
+.center {
+    text-align: center;
+}
+
+#motivation {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
 }
 
 
-/* =========================
-   STUDY TIMER
-========================= */
+/* TIMER */
 
-let totalSeconds = 25 * 60;
+.timer {
+    background: black;
+    color: white;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+}
 
-let timer = null;
+#time {
+    font-size: 55px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    margin-bottom: 15px;
+}
 
-
-function updateTimer() {
-
-    const minutes =
-        Math.floor(totalSeconds / 60);
-
-    const seconds =
-        totalSeconds % 60;
-
-    document.getElementById("time")
-        .innerText =
-        String(minutes).padStart(2, "0")
-        + ":" +
-        String(seconds).padStart(2, "0");
-
+.timer button {
+    background: white;
+    color: black;
 }
 
 
-function startTimer() {
+/* TEACHER */
 
-    if (timer !== null) {
-        return;
-    }
-
-    timer = setInterval(function() {
-
-        if (totalSeconds > 0) {
-
-            totalSeconds--;
-
-            updateTimer();
-
-        } else {
-
-            clearInterval(timer);
-
-            timer = null;
-
-            alert("🎉 Study session complete!");
-
-        }
-
-    }, 1000);
-
+.teacher-box {
+    background: #f5f0ff;
 }
 
 
-function pauseTimer() {
+/* TASKS */
 
-    clearInterval(timer);
-
-    timer = null;
-
+ul {
+    padding: 0;
 }
 
-
-function resetTimer() {
-
-    clearInterval(timer);
-
-    timer = null;
-
-    totalSeconds = 25 * 60;
-
-    updateTimer();
-
+li {
+    list-style: none;
+    background: #f1f3f8;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 10px;
 }
 
-
-updateTimer();
-
-
-/* =========================
-   /TEACHER
-========================= */
-
-function askTeacher() {
-
-    const topic =
-        document.getElementById(
-            "topicInput"
-        ).value.trim();
-
-
-    if (topic === "") {
-
-        alert("Enter a topic first.");
-
-        return;
-
-    }
-
-
-    const prompt =
-        "/teacher Explain " +
-        topic +
-        " in a simple beginner-friendly way with examples.";
-
-
-    const url =
-        "https://chatgpt.com/?q=" +
-        encodeURIComponent(prompt);
-
-
-    window.open(url, "_blank");
-
+.task-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
 }
 
-
-/* =========================
-   TASK SYSTEM
-========================= */
-
-let tasks =
-    JSON.parse(
-        localStorage.getItem("studyTasks")
-    ) || [];
-
-
-function saveTasks() {
-
-    localStorage.setItem(
-        "studyTasks",
-        JSON.stringify(tasks)
-    );
-
+.task-info {
+    flex: 1;
+    cursor: pointer;
 }
 
-
-function showTasks() {
-
-    const list =
-        document.getElementById("taskList");
-
-    list.innerHTML = "";
-
-
-    if (tasks.length === 0) {
-
-        list.innerHTML =
-            '<p class="empty">No tasks yet 📚</p>';
-
-        return;
-
-    }
-
-
-    tasks.forEach(function(task, index) {
-
-        const li =
-            document.createElement("li");
-
-
-        li.innerHTML = `
-
-            <div class="task-row">
-
-                <div>
-
-                    <div class="subject">
-                        ${escapeHTML(task.subject)}
-                    </div>
-
-                    <span
-                        onclick="completeTask(${index})"
-                        class="${task.completed
-                            ? "completed"
-                            : ""}">
-
-                        ${escapeHTML(task.text)}
-
-                    </span>
-
-                </div>
-
-                <button
-                    class="red"
-                    onclick="deleteTask(${index})">
-
-                    Delete
-
-                </button>
-
-            </div>
-
-        `;
-
-
-        list.appendChild(li);
-
-    });
-
+.subject {
+    color: #3155d9;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 4px;
 }
 
+.completed {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
 
-function addTask() {
-
-    const subject =
-        document.getElementById(
-            "subject"
-        ).value;
-
-
-    const input =
-        document.getElementById(
-            "taskInput"
-        );
-
-
-    const text =
-        input.value.trim();
-
-
-    if (subject === "") {
-
-        alert("Please select a subject.");
-
-        return;
-
-    }
-
-
-    if (text === "") {
-
-        alert("Please enter a task.");
-
-        return;
-
-    }
-
-
-    tasks.push({
-
-        subject: subject,
-
-        text: text,
-
-        completed: false
-
-    });
+.empty {
+    text-align: center;
+    color: #777;
 ```
