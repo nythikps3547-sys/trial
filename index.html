@@ -1,82 +1,136 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Study To-Do</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Study Dashboard</title>
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f2f6ff;
-            text-align: center;
-            padding: 30px;
+
+        * {
+            box-sizing: border-box;
         }
 
-        .box {
-            max-width: 550px;
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef3ff;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 650px;
             margin: auto;
+        }
+
+        .card {
             background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
         }
 
         h1 {
+            text-align: center;
             color: #3155d9;
         }
+
+        h2 {
+            margin-top: 5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin: 7px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        button {
+            padding: 11px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 4px;
+            font-size: 14px;
+        }
+
+        .blue {
+            background: #3155d9;
+            color: white;
+        }
+
+        .red {
+            background: #e53935;
+            color: white;
+        }
+
+        .green {
+            background: #2e9d55;
+            color: white;
+        }
+
+        /* MOTIVATION */
 
         #motivation {
             background: #fff3cd;
             padding: 15px;
             border-radius: 10px;
-            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
         }
 
-        select,
-        input {
-            width: 90%;
-            padding: 12px;
-            margin: 7px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
+        /* TIMER */
 
-        button {
-            padding: 12px 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 5px;
-        }
-
-        .add {
-            background: #3155d9;
+        .timer {
+            background: #000;
             color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
         }
 
-        .delete {
-            background: #ff5555;
-            color: white;
+        #time {
+            font-size: 55px;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        .timer button {
+            background: white;
+            color: black;
+        }
+
+        /* TASK */
+
+        ul {
+            padding: 0;
         }
 
         li {
             list-style: none;
             background: #f1f3f8;
-            margin: 10px 0;
             padding: 12px;
-            border-radius: 8px;
-            text-align: left;
+            margin: 8px 0;
+            border-radius: 10px;
         }
 
-        .task {
+        .task-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
         }
 
         .subject {
-            font-size: 13px;
             color: #3155d9;
+            font-size: 13px;
             font-weight: bold;
         }
 
@@ -84,73 +138,292 @@
             text-decoration: line-through;
             opacity: 0.5;
         }
+
+        /* LOCK SCREEN */
+
+        #loginScreen {
+            position: fixed;
+            inset: 0;
+            background: #eef3ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .loginBox {
+            background: white;
+            width: 100%;
+            max-width: 380px;
+            padding: 30px;
+            border-radius: 18px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        #wrongPassword {
+            color: red;
+            display: none;
+        }
+
     </style>
 </head>
 
 <body>
 
-<div class="box">
+<!-- PASSWORD SCREEN -->
 
-    <h1>📚 Study To-Do</h1>
+<div id="loginScreen">
 
-    <div id="motivation">
-        💪 You can do it!
+    <div class="loginBox">
+
+        <h2>🔐 Study Dashboard</h2>
+
+        <p>Enter your password</p>
+
+        <input
+            type="password"
+            id="passwordInput"
+            placeholder="Password"
+        >
+
+        <button
+            class="blue"
+            onclick="login()">
+
+            Enter
+
+        </button>
+
+        <p id="wrongPassword">
+            Wrong password
+        </p>
+
     </div>
-
-    <button onclick="newMotivation()">
-        💡 Motivation
-    </button>
-
-    <hr>
-
-    <h2>➕ Add Study Task</h2>
-
-    <!-- SUBJECT LIST -->
-    <select id="subject">
-
-        <option value="">
-            Select Subject
-        </option>
-
-        <option>📐 Mathematics</option>
-
-        <option>⚡ Physics</option>
-
-        <option>🧪 Chemistry</option>
-
-        <option>🧬 Biology</option>
-
-        <option>📖 English</option>
-
-        <option>💻 Computer Science</option>
-
-        <option>🌍 Social Science</option>
-
-        <option>📝 Other</option>
-
-    </select>
-
-    <input
-        type="text"
-        id="taskInput"
-        placeholder="Example: Complete chapter 3"
-    >
-
-    <button class="add" onclick="addTask()">
-        Add Task
-    </button>
-
-    <h2>📋 My Tasks</h2>
-
-    <ul id="taskList"></ul>
 
 </div>
 
+
+<div class="container" id="app">
+
+    <h1>📚 Study Dashboard</h1>
+
+
+    <!-- MOTIVATION -->
+
+    <div class="card">
+
+        <div id="motivation">
+            💪 You can do it!
+        </div>
+
+        <div style="text-align:center">
+
+            <button
+                class="blue"
+                onclick="newMotivation()">
+
+                💡 New Motivation
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- TIMER -->
+
+    <div class="card">
+
+        <h2>⏱️ Study Timer</h2>
+
+        <div class="timer">
+
+            <div id="time">
+                25:00
+            </div>
+
+            <button onclick="startTimer()">
+                ▶ Start
+            </button>
+
+            <button onclick="pauseTimer()">
+                ⏸ Pause
+            </button>
+
+            <button onclick="resetTimer()">
+                🔄 Reset
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- CHATGPT TEACHER -->
+
+    <div class="card">
+
+        <h2>🤖 Ask /teacher</h2>
+
+        <p>
+            Enter a study topic and open ChatGPT.
+        </p>
+
+        <input
+            type="text"
+            id="topicInput"
+            placeholder="Example: Ohm's Law"
+        >
+
+        <button
+            class="blue"
+            onclick="askTeacher()">
+
+            🤖 /teacher
+
+        </button>
+
+    </div>
+
+
+    <!-- ADD TASK -->
+
+    <div class="card">
+
+        <h2>➕ Add Study Task</h2>
+
+        <select id="subject">
+
+            <option value="">
+                Select Subject
+            </option>
+
+            <option>📐 Mathematics</option>
+            <option>⚡ Physics</option>
+            <option>🧪 Chemistry</option>
+            <option>🧬 Biology</option>
+            <option>📖 English</option>
+            <option>💻 Computer Science</option>
+            <option>🌍 Social Science</option>
+            <option>📝 Other</option>
+
+        </select>
+
+        <input
+            type="text"
+            id="taskInput"
+            placeholder="Example: Complete chapter 3"
+        >
+
+        <button
+            class="blue"
+            onclick="addTask()">
+
+            Add Task
+
+        </button>
+
+    </div>
+
+
+    <!-- TASK LIST -->
+
+    <div class="card">
+
+        <h2>📋 My Tasks</h2>
+
+        <ul id="taskList"></ul>
+
+    </div>
+
+
+    <!-- LOGOUT -->
+
+    <div style="text-align:center">
+
+        <button
+            class="red"
+            onclick="logout()">
+
+            🔒 Lock Dashboard
+
+        </button>
+
+    </div>
+
+</div>
+
+
 <script>
 
-let tasks =
-    JSON.parse(localStorage.getItem("studyTasks")) || [];
+/* =========================
+   PASSWORD
+========================= */
 
+/*
+   CHANGE THIS PASSWORD
+*/
+
+const PASSWORD = "study123";
+
+
+function login() {
+
+    const entered =
+        document.getElementById("passwordInput").value;
+
+    if (entered === PASSWORD) {
+
+        sessionStorage.setItem(
+            "studyLoggedIn",
+            "true"
+        );
+
+        document.getElementById(
+            "loginScreen"
+        ).style.display = "none";
+
+    } else {
+
+        document.getElementById(
+            "wrongPassword"
+        ).style.display = "block";
+
+    }
+}
+
+
+function logout() {
+
+    sessionStorage.removeItem(
+        "studyLoggedIn"
+    );
+
+    location.reload();
+
+}
+
+
+/* CHECK LOGIN */
+
+if (
+    sessionStorage.getItem("studyLoggedIn")
+    === "true"
+) {
+
+    document.getElementById(
+        "loginScreen"
+    ).style.display = "none";
+
+}
+
+
+/* =========================
+   MOTIVATION
+========================= */
 
 const motivationWords = [
 
@@ -177,147 +450,6 @@ const motivationWords = [
 ];
 
 
-function showTasks() {
-
-    const list =
-        document.getElementById("taskList");
-
-    list.innerHTML = "";
-
-    tasks.forEach((task, index) => {
-
-        const li =
-            document.createElement("li");
-
-        li.innerHTML = `
-
-            <div class="task">
-
-                <div>
-
-                    <div class="subject">
-                        ${task.subject}
-                    </div>
-
-                    <span
-                        onclick="completeTask(${index})"
-                        class="${task.completed
-                            ? 'completed'
-                            : ''}">
-
-                        ${task.text}
-
-                    </span>
-
-                </div>
-
-                <button
-                    class="delete"
-                    onclick="deleteTask(${index})">
-
-                    Delete
-
-                </button>
-
-            </div>
-
-        `;
-
-        list.appendChild(li);
-
-    });
-
-}
-
-
-function addTask() {
-
-    const subject =
-        document.getElementById("subject").value;
-
-    const input =
-        document.getElementById("taskInput");
-
-    const text =
-        input.value.trim();
-
-
-    if (subject === "") {
-
-        alert("Please select a subject.");
-
-        return;
-    }
-
-
-    if (text === "") {
-
-        alert("Please enter a task.");
-
-        return;
-    }
-
-
-    tasks.push({
-
-        subject: subject,
-
-        text: text,
-
-        completed: false
-
-    });
-
-
-    localStorage.setItem(
-        "studyTasks",
-        JSON.stringify(tasks)
-    );
-
-
-    input.value = "";
-
-    document.getElementById("subject").value = "";
-
-
-    showTasks();
-
-}
-
-
-function completeTask(index) {
-
-    tasks[index].completed =
-        !tasks[index].completed;
-
-
-    localStorage.setItem(
-        "studyTasks",
-        JSON.stringify(tasks)
-    );
-
-
-    showTasks();
-
-}
-
-
-function deleteTask(index) {
-
-    tasks.splice(index, 1);
-
-
-    localStorage.setItem(
-        "studyTasks",
-        JSON.stringify(tasks)
-    );
-
-
-    showTasks();
-
-}
-
-
 function newMotivation() {
 
     const random =
@@ -325,7 +457,6 @@ function newMotivation() {
             Math.random() *
             motivationWords.length
         );
-
 
     document.getElementById(
         "motivation"
@@ -335,9 +466,22 @@ function newMotivation() {
 }
 
 
-showTasks();
+/* =========================
+   TIMER
+========================= */
 
-</script>
+let totalSeconds = 25 * 60;
 
-</body>
-</html>
+let timer = null;
+
+
+function updateTimer() {
+
+    let minutes =
+        Math.floor(totalSeconds / 60);
+
+    let seconds =
+        totalSeconds % 60;
+
+    document
+```
