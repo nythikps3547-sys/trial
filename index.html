@@ -1,284 +1,343 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NetVital</title>
-<style>
-*{box-sizing:border-box}
-body{
-  margin:0;background:#000;color:#fff;font-family:Arial,sans-serif;
-  min-height:100vh;padding:20px
-}
-.container{max-width:700px;margin:auto}
-h1{text-align:center;font-size:42px}
-.card{
-  background:#111;border:1px solid #333;border-radius:18px;
-  padding:20px;margin:15px 0
-}
-input,button{
-  width:100%;padding:14px;margin-top:10px;border-radius:10px;
-  border:1px solid #444;font-size:16px
-}
-input{background:#1b1b1b;color:#fff}
-button{background:#fff;color:#000;font-weight:bold;cursor:pointer}
-.timer{
-  text-align:center;background:#111;border:1px solid #333;
-  border-radius:20px;padding:25px;margin-top:15px
-}
-.message{font-size:24px;font-weight:bold;overflow-wrap:anywhere}
-.time{font-size:60px;font-weight:bold;margin:20px 0}
-.delete{background:#800;color:#fff;border:0}
-#app{display:none}
-.status{text-align:center;color:#aaa;margin:10px}
-.error{color:#ff5555;text-align:center}
-</style>
+    <title>Study To-Do</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f6ff;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .box {
+            max-width: 550px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px #ccc;
+        }
+
+        h1 {
+            color: #3155d9;
+        }
+
+        #motivation {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        select,
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 7px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .add {
+            background: #3155d9;
+            color: white;
+        }
+
+        .delete {
+            background: #ff5555;
+            color: white;
+        }
+
+        li {
+            list-style: none;
+            background: #f1f3f8;
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .task {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .subject {
+            font-size: 13px;
+            color: #3155d9;
+            font-weight: bold;
+        }
+
+        .completed {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+    </style>
 </head>
 
 <body>
-<div class="container">
 
-<div id="login">
-  <h1>NetVital</h1>
-  <div class="card">
-    <h2>Login</h2>
-    <input id="username" placeholder="Username">
-    <input id="password" type="password" placeholder="Password">
-    <button onclick="login()">LOGIN</button>
-    <p id="loginError" class="error"></p>
-  </div>
+<div class="box">
+
+    <h1>📚 Study To-Do</h1>
+
+    <div id="motivation">
+        💪 You can do it!
+    </div>
+
+    <button onclick="newMotivation()">
+        💡 Motivation
+    </button>
+
+    <hr>
+
+    <h2>➕ Add Study Task</h2>
+
+    <!-- SUBJECT LIST -->
+    <select id="subject">
+
+        <option value="">
+            Select Subject
+        </option>
+
+        <option>📐 Mathematics</option>
+
+        <option>⚡ Physics</option>
+
+        <option>🧪 Chemistry</option>
+
+        <option>🧬 Biology</option>
+
+        <option>📖 English</option>
+
+        <option>💻 Computer Science</option>
+
+        <option>🌍 Social Science</option>
+
+        <option>📝 Other</option>
+
+    </select>
+
+    <input
+        type="text"
+        id="taskInput"
+        placeholder="Example: Complete chapter 3"
+    >
+
+    <button class="add" onclick="addTask()">
+        Add Task
+    </button>
+
+    <h2>📋 My Tasks</h2>
+
+    <ul id="taskList"></ul>
+
 </div>
 
-<div id="app">
-  <h1>NetVital</h1>
+<script>
 
-  <div class="card">
-    <h2>Add Timer</h2>
-    <input id="message" placeholder="Message to send">
-    <input id="hours" type="number" min="0" value="0" placeholder="Hours">
-    <input id="minutes" type="number" min="0" value="0" placeholder="Minutes">
-    <input id="seconds" type="number" min="0" value="10" placeholder="Seconds">
-    <button onclick="addTimer()">ADD TIMER</button>
-    <button onclick="enableNotifications()">ENABLE NOTIFICATIONS</button>
-  </div>
+let tasks =
+    JSON.parse(localStorage.getItem("studyTasks")) || [];
 
-  <div id="status" class="status">Connecting...</div>
-  <div id="timers"></div>
-</div>
 
-</div>
+const motivationWords = [
 
-<script type="module">
-import {initializeApp}
-from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    "💪 You can do it!",
 
-import {
-  getDatabase, ref, push, set, onValue, remove
-}
-from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+    "📚 One page at a time.",
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAEle7t2uxecqThWzbjV5RX8wEcXqnJvZM",
-  authDomain: "netvital-ca1d1.firebaseapp.com",
-  databaseURL: "https://netvital-ca1d1-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "netvital-ca1d1",
-  storageBucket: "netvital-ca1d1.firebasestorage.app",
-  messagingSenderId: "199895359034",
-  appId: "1:199895359034:web:c997ee869b549578615f03"
-};
+    "🔥 Keep going!",
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    "🎯 Focus on your goal.",
 
-const USERNAME = "trial";
-const PASSWORD = "12345";
+    "⭐ Small progress is still progress.",
 
-let timers = {};
-const running = {};
+    "🧠 Learn today, succeed tomorrow.",
 
-window.login = function(){
-  const u = document.getElementById("username").value.trim();
-  const p = document.getElementById("password").value;
+    "🚀 Don't give up!",
 
-  if(u === USERNAME && p === PASSWORD){
-    document.getElementById("login").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    document.getElementById("status").textContent =
-      "Connected. Allow notifications on this device.";
-  }else{
-    document.getElementById("loginError").textContent =
-      "Wrong username or password.";
-  }
-};
+    "🏆 Your hard work will pay off.",
 
-window.enableNotifications = async function(){
-  if(!("Notification" in window)){
-    alert("This browser does not support notifications.");
-    return;
-  }
+    "💡 Keep learning!",
 
-  const permission = await Notification.requestPermission();
+    "🌟 Believe in yourself."
 
-  if(permission === "granted"){
-    document.getElementById("status").textContent =
-      "🔔 Notifications enabled on this device.";
-  }else{
-    document.getElementById("status").textContent =
-      "Notifications were not allowed.";
-  }
-};
+];
 
-window.addTimer = async function(){
-  const message = document.getElementById("message").value.trim();
 
-  const h = Number(document.getElementById("hours").value || 0);
-  const m = Number(document.getElementById("minutes").value || 0);
-  const s = Number(document.getElementById("seconds").value || 0);
+function showTasks() {
 
-  const duration = ((h * 3600) + (m * 60) + s) * 1000;
+    const list =
+        document.getElementById("taskList");
 
-  if(!message){
-    alert("Enter a message.");
-    return;
-  }
+    list.innerHTML = "";
 
-  if(duration <= 0){
-    alert("Set a timer greater than 0.");
-    return;
-  }
+    tasks.forEach((task, index) => {
 
-  /*
-    IMPORTANT:
-    finishTime is stored in Firebase.
-    Every connected device therefore uses the
-    same exact finishing time.
-  */
-  const timerRef = push(ref(db, "timers"));
+        const li =
+            document.createElement("li");
 
-  await set(timerRef, {
-    message: message,
-    finishTime: Date.now() + duration,
-    createdAt: Date.now()
-  });
+        li.innerHTML = `
 
-  document.getElementById("message").value = "";
-};
+            <div class="task">
 
-const timersRef = ref(db, "timers");
+                <div>
 
-onValue(timersRef, snapshot => {
-  timers = snapshot.val() || {};
-  renderTimers();
-  document.getElementById("status").textContent =
-    "🟢 Connected — timers synchronized";
-});
+                    <div class="subject">
+                        ${task.subject}
+                    </div>
 
-function renderTimers(){
-  const area = document.getElementById("timers");
-  area.innerHTML = "";
+                    <span
+                        onclick="completeTask(${index})"
+                        class="${task.completed
+                            ? 'completed'
+                            : ''}">
 
-  Object.entries(timers).forEach(([id, timer]) => {
-    createTimer(id, timer);
-  });
-}
+                        ${task.text}
 
-function createTimer(id, timer){
-  const card = document.createElement("div");
-  card.className = "timer";
-  card.id = "timer-" + id;
+                    </span>
 
-  const message = document.createElement("div");
-  message.className = "message";
-  message.textContent = timer.message;
+                </div>
 
-  const time = document.createElement("div");
-  time.className = "time";
-  time.id = "time-" + id;
+                <button
+                    class="delete"
+                    onclick="deleteTask(${index})">
 
-  const deleteButton = document.createElement("button");
-  deleteButton.className = "delete";
-  deleteButton.textContent = "DELETE";
-  deleteButton.onclick = () => remove(ref(db, "timers/" + id));
+                    Delete
 
-  card.appendChild(message);
-  card.appendChild(time);
-  card.appendChild(deleteButton);
-  document.getElementById("timers").appendChild(card);
+                </button>
 
-  if(!running[id]){
-    running[id] = true;
-    runTimer(id, timer);
-  }
-}
+            </div>
 
-function runTimer(id, timer){
-  function update(){
-    const timeElement = document.getElementById("time-" + id);
+        `;
 
-    if(!timeElement){
-      return;
-    }
+        list.appendChild(li);
 
-    const remaining = timer.finishTime - Date.now();
-
-    if(remaining <= 0){
-      timeElement.textContent = "00:00:00";
-
-      showNotificationOnce(id, timer.message);
-
-      setTimeout(() => {
-        const card = document.getElementById("timer-" + id);
-        if(card) card.remove();
-      }, 1200);
-
-      delete running[id];
-      return;
-    }
-
-    const total = Math.floor(remaining / 1000);
-    const hours = Math.floor(total / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const seconds = total % 60;
-
-    timeElement.textContent =
-      String(hours).padStart(2,"0") + ":" +
-      String(minutes).padStart(2,"0") + ":" +
-      String(seconds).padStart(2,"0");
-
-    setTimeout(update, 250);
-  }
-
-  update();
-}
-
-/*
-  Each browser/device keeps its own notification record.
-  Therefore every connected device can display the message.
-*/
-function showNotificationOnce(id, message){
-  const key = "netvital-notified-" + id;
-
-  if(localStorage.getItem(key) === "yes"){
-    return;
-  }
-
-  localStorage.setItem(key, "yes");
-
-  if("Notification" in window &&
-     Notification.permission === "granted"){
-
-    new Notification("NetVital", {
-      body: message,
-      requireInteraction: true
     });
-  }
 
-  /*
-    This also shows the message when the browser
-    refuses system notifications.
-  */
-  alert("NetVital\n\n" + message);
 }
+
+
+function addTask() {
+
+    const subject =
+        document.getElementById("subject").value;
+
+    const input =
+        document.getElementById("taskInput");
+
+    const text =
+        input.value.trim();
+
+
+    if (subject === "") {
+
+        alert("Please select a subject.");
+
+        return;
+    }
+
+
+    if (text === "") {
+
+        alert("Please enter a task.");
+
+        return;
+    }
+
+
+    tasks.push({
+
+        subject: subject,
+
+        text: text,
+
+        completed: false
+
+    });
+
+
+    localStorage.setItem(
+        "studyTasks",
+        JSON.stringify(tasks)
+    );
+
+
+    input.value = "";
+
+    document.getElementById("subject").value = "";
+
+
+    showTasks();
+
+}
+
+
+function completeTask(index) {
+
+    tasks[index].completed =
+        !tasks[index].completed;
+
+
+    localStorage.setItem(
+        "studyTasks",
+        JSON.stringify(tasks)
+    );
+
+
+    showTasks();
+
+}
+
+
+function deleteTask(index) {
+
+    tasks.splice(index, 1);
+
+
+    localStorage.setItem(
+        "studyTasks",
+        JSON.stringify(tasks)
+    );
+
+
+    showTasks();
+
+}
+
+
+function newMotivation() {
+
+    const random =
+        Math.floor(
+            Math.random() *
+            motivationWords.length
+        );
+
+
+    document.getElementById(
+        "motivation"
+    ).innerText =
+        motivationWords[random];
+
+}
+
+
+showTasks();
+
 </script>
+
 </body>
 </html>
