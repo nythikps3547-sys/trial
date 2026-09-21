@@ -1,16 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>NetVital Messages</title>
+  <title>NetVital Timer</title>
 
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f2f2f2;
-      margin: 0;
       padding: 20px;
     }
 
@@ -23,18 +22,13 @@
       box-shadow: 0 4px 15px #aaa;
     }
 
-    h1 {
-      text-align: center;
-    }
-
-    input,
-    button {
+    input, button {
       width: 100%;
       box-sizing: border-box;
-      padding: 13px;
+      padding: 12px;
       margin-top: 10px;
-      border-radius: 8px;
       font-size: 16px;
+      border-radius: 8px;
     }
 
     input {
@@ -52,25 +46,22 @@
       background: #125aa0;
     }
 
-    .logout {
-      background: #d32f2f;
-    }
-
-    #app {
-      display: none;
-    }
-
-    #status {
+    .timer {
+      background: #eeeeee;
+      padding: 15px;
       margin-top: 15px;
-      text-align: center;
-      font-weight: bold;
+      border-radius: 10px;
     }
 
-    .message {
-      background: #eee;
-      padding: 12px;
+    .time {
+      font-size: 25px;
+      font-weight: bold;
+      text-align: center;
       margin-top: 10px;
-      border-radius: 8px;
+    }
+
+    .delete {
+      background: #d32f2f;
     }
   </style>
 </head>
@@ -81,693 +72,366 @@
 
   <h1>NetVital</h1>
 
-  <!-- LOGIN -->
+  <button id="addTimer">
+    ➕ Add Timer
+  </button>
 
-  <div id="login">
-
-    <h2>Login</h2>
-
-    <input
-      type="email"
-      id="email"
-      placeholder="Email"
-    >
-
-    <input
-      type="password"
-      id="password"
-      placeholder="Password"
-    >
-
-    <button id="loginBtn">
-      Login
-    </button>
-
-  </div>
-
-
-  <!-- APP -->
-
-  <div id="app">
-
-    <h2>Send Scheduled Message</h2>
-
-    <input
-      type="text"
-      id="message"
-      placeholder="Enter message"
-    >
-
-    <input
-      type="date"
-      id="date"
-    >
-
-    <input
-      type="time"
-      id="time"
-    >
-
-    <button id="notificationBtn">
-      Enable Notifications
-    </button>
-
-    <button id="addBtn">
-      ➕ Add Message
-    </button>
-
-    <button
-      id="logoutBtn"
-      class="logout"
-    >
-      Logout
-    </button>
-
-    <div id="status"></div>
-
-    <h2>Messages</h2>
-
-    <div id="messages"></div>
-
-  </div>
+  <div id="timerArea"></div>
 
 </div>
 
 
-<script type="module">
+<script>
 
-/* ================================
-   FIREBASE IMPORTS
-================================ */
-
-import {
-  initializeApp
-} from
-"https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from
-"https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-
-import {
-  getDatabase,
-  ref,
-  push,
-  set,
-  onValue
-} from
-"https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
-
-import {
-  getMessaging,
-  getToken,
-  onMessage
-} from
-"https://www.gstatic.com/firebasejs/12.3.0/firebase-messaging.js";
+let timerNumber = 0;
 
 
-/* ================================
-   FIREBASE CONFIG
-================================ */
+/* =========================
+   NOTIFICATION PERMISSION
+========================= */
 
-const firebaseConfig = {
+async function enableNotifications() {
 
-  apiKey:
-  "AIzaSyAEle7t2uxecqThWzbjV5RX8wEcXqnJvZM",
+  if (!("Notification" in window)) {
 
-  authDomain:
-  "netvital-ca1d1.firebaseapp.com",
-
-  databaseURL:
-  "https://netvital-ca1d1-default-rtdb.asia-southeast1.firebasedatabase.app",
-
-  projectId:
-  "netvital-ca1d1",
-
-  storageBucket:
-  "netvital-ca1d1.firebasestorage.app",
-
-  messagingSenderId:
-  "199895359034",
-
-  appId:
-  "1:199895359034:web:c997ee869b549578615f03"
-};
-
-
-/* ================================
-   VAPID KEY
-================================ */
-
-/*
-   IMPORTANT:
-
-   Replace this with your Firebase
-   Web Push public VAPID key.
-*/
-
-const VAPID_KEY =
-"PASTE_YOUR_VAPID_PUBLIC_KEY_HERE";
-
-
-/* ================================
-   INITIALIZE FIREBASE
-================================ */
-
-const app =
-initializeApp(firebaseConfig);
-
-const auth =
-getAuth(app);
-
-const database =
-getDatabase(app);
-
-const messaging =
-getMessaging(app);
-
-
-/* ================================
-   HTML ELEMENTS
-================================ */
-
-const login =
-document.getElementById("login");
-
-const appDiv =
-document.getElementById("app");
-
-const email =
-document.getElementById("email");
-
-const password =
-document.getElementById("password");
-
-const loginBtn =
-document.getElementById("loginBtn");
-
-const logoutBtn =
-document.getElementById("logoutBtn");
-
-const notificationBtn =
-document.getElementById("notificationBtn");
-
-const addBtn =
-document.getElementById("addBtn");
-
-const message =
-document.getElementById("message");
-
-const date =
-document.getElementById("date");
-
-const time =
-document.getElementById("time");
-
-const status =
-document.getElementById("status");
-
-const messages =
-document.getElementById("messages");
-
-
-/* ================================
-   LOGIN
-================================ */
-
-loginBtn.onclick =
-async function () {
-
-  try {
-
-    await signInWithEmailAndPassword(
-      auth,
-      email.value,
-      password.value
+    alert(
+      "Your browser does not support notifications."
     );
 
-    status.innerText =
-      "Login successful";
-
+    return false;
   }
 
-  catch (error) {
-
-    console.error(error);
-
-    status.innerText =
-      "Login failed: " +
-      error.message;
+  if (Notification.permission === "granted") {
+    return true;
   }
 
-};
+  const permission =
+    await Notification.requestPermission();
 
+  if (permission !== "granted") {
 
-/* ================================
-   AUTH STATE
-================================ */
+    alert(
+      "Please allow notifications."
+    );
 
-onAuthStateChanged(
-  auth,
-  function(user) {
-
-    if (user) {
-
-      login.style.display =
-        "none";
-
-      appDiv.style.display =
-        "block";
-
-      status.innerText =
-        "Logged in: " +
-        user.email;
-
-      loadMessages();
-
-    }
-
-    else {
-
-      login.style.display =
-        "block";
-
-      appDiv.style.display =
-        "none";
-
-    }
-
+    return false;
   }
-);
+
+  return true;
+}
 
 
-/* ================================
-   LOGOUT
-================================ */
+/* =========================
+   ADD TIMER BUTTON
+========================= */
 
-logoutBtn.onclick =
-async function () {
+document
+  .getElementById("addTimer")
+  .addEventListener("click", async function() {
 
-  await signOut(auth);
+    const allowed =
+      await enableNotifications();
 
-};
-
-
-/* ================================
-   ENABLE NOTIFICATIONS
-================================ */
-
-notificationBtn.onclick =
-async function () {
-
-  try {
-
-    if (!("Notification" in window)) {
-
-      status.innerText =
-        "Notifications are not supported.";
-
+    if (!allowed) {
       return;
     }
 
+    timerNumber++;
 
-    const permission =
-      await Notification.requestPermission();
+    createTimer(timerNumber);
 
-
-    if (permission !== "granted") {
-
-      status.innerText =
-        "Notification permission denied.";
-
-      return;
-    }
+  });
 
 
-    /*
-       Register service worker
-    */
+/* =========================
+   CREATE TIMER
+========================= */
 
-    const registration =
-      await navigator.serviceWorker.register(
-        "./firebase-messaging-sw.js"
+function createTimer(id) {
+
+  const timer =
+    document.createElement("div");
+
+  timer.className = "timer";
+
+  timer.id =
+    "timer-" + id;
+
+
+  timer.innerHTML = `
+
+    <h3>Timer ${id}</h3>
+
+    <input
+      type="text"
+      id="message-${id}"
+      placeholder="Enter message"
+    >
+
+    <label>
+      Hours
+    </label>
+
+    <input
+      type="number"
+      id="hours-${id}"
+      min="0"
+      value="0"
+    >
+
+    <label>
+      Minutes
+    </label>
+
+    <input
+      type="number"
+      id="minutes-${id}"
+      min="0"
+      value="1"
+    >
+
+    <label>
+      Seconds
+    </label>
+
+    <input
+      type="number"
+      id="seconds-${id}"
+      min="0"
+      value="0"
+    >
+
+    <button onclick="startTimer(${id})">
+      ▶ Start Timer
+    </button>
+
+    <button
+      class="delete"
+      onclick="deleteTimer(${id})"
+    >
+      🗑 Delete
+    </button>
+
+    <div
+      class="time"
+      id="display-${id}"
+    >
+      Not started
+    </div>
+
+  `;
+
+
+  document
+    .getElementById("timerArea")
+    .appendChild(timer);
+}
+
+
+/* =========================
+   START TIMER
+========================= */
+
+function startTimer(id) {
+
+  const message =
+    document
+      .getElementById("message-" + id)
+      .value
+      .trim();
+
+
+  const hours =
+    Number(
+      document
+        .getElementById("hours-" + id)
+        .value
+    );
+
+
+  const minutes =
+    Number(
+      document
+        .getElementById("minutes-" + id)
+        .value
+    );
+
+
+  const seconds =
+    Number(
+      document
+        .getElementById("seconds-" + id)
+        .value
+    );
+
+
+  if (!message) {
+
+    alert(
+      "Enter a message."
+    );
+
+    return;
+  }
+
+
+  const totalSeconds =
+    (hours * 3600) +
+    (minutes * 60) +
+    seconds;
+
+
+  if (totalSeconds <= 0) {
+
+    alert(
+      "Set a timer greater than 0."
+    );
+
+    return;
+  }
+
+
+  let remaining =
+    totalSeconds;
+
+
+  const display =
+    document
+      .getElementById(
+        "display-" + id
       );
 
 
-    /*
-       Get device token
-    */
+  displayTime(
+    display,
+    remaining
+  );
 
-    const token =
-      await getToken(
-        messaging,
-        {
-          vapidKey:
-            VAPID_KEY,
 
-          serviceWorkerRegistration:
-            registration
-        }
+  const interval =
+    setInterval(function() {
+
+      remaining--;
+
+      displayTime(
+        display,
+        remaining
       );
 
 
-    if (!token) {
+      if (remaining <= 0) {
 
-      status.innerText =
-        "Could not get device token.";
+        clearInterval(interval);
 
-      return;
-    }
+        timerFinished(
+          message
+        );
 
+      }
 
-    const user =
-      auth.currentUser;
-
-
-    if (!user) {
-
-      status.innerText =
-        "Login first.";
-
-      return;
-    }
+    }, 1000);
 
 
-    /*
-       Save device token
-    */
-
-    const tokenId =
-      btoa(token)
-      .replaceAll("/", "_")
-      .replaceAll("+", "-")
-      .replaceAll("=", "");
+  display.dataset.running =
+    "true";
+}
 
 
-    await set(
-      ref(
-        database,
-        "deviceTokens/" +
-        tokenId
-      ),
+/* =========================
+   DISPLAY TIME
+========================= */
+
+function displayTime(
+  element,
+  totalSeconds
+) {
+
+  const hours =
+    Math.floor(
+      totalSeconds / 3600
+    );
+
+
+  const minutes =
+    Math.floor(
+      (totalSeconds % 3600) / 60
+    );
+
+
+  const seconds =
+    totalSeconds % 60;
+
+
+  element.innerText =
+
+    String(hours).padStart(2, "0") +
+    ":" +
+
+    String(minutes).padStart(2, "0") +
+    ":" +
+
+    String(seconds).padStart(2, "0");
+}
+
+
+/* =========================
+   TIMER FINISHED
+========================= */
+
+function timerFinished(message) {
+
+  /*
+    System/browser notification
+  */
+
+  if (
+    Notification.permission ===
+    "granted"
+  ) {
+
+    new Notification(
+      "NetVital",
       {
-
-        token: token,
-
-        uid: user.uid,
-
-        createdAt: Date.now()
-
+        body: message,
+        icon: "./icon.png"
       }
     );
 
-
-    status.innerText =
-      "✅ Notifications enabled!";
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-    status.innerText =
-      "Notification error: " +
-      error.message;
-
-  }
-
-};
-
-
-/* ================================
-   ADD MESSAGE
-================================ */
-
-addBtn.onclick =
-async function () {
-
-  const user =
-    auth.currentUser;
-
-
-  if (!user) {
-
-    status.innerText =
-      "Login first.";
-
-    return;
-  }
-
-
-  const text =
-    message.value.trim();
-
-
-  if (!text) {
-
-    status.innerText =
-      "Enter a message.";
-
-    return;
-  }
-
-
-  if (!date.value) {
-
-    status.innerText =
-      "Select a date.";
-
-    return;
-  }
-
-
-  if (!time.value) {
-
-    status.innerText =
-      "Select a time.";
-
-    return;
   }
 
 
   /*
-     Convert selected local date/time
-     to Unix timestamp.
+    Also show an alert if the
+    page is currently open.
   */
 
-  const selectedDate =
-    new Date(
-      date.value +
-      "T" +
-      time.value
-    );
-
-
-  const timestamp =
-    selectedDate.getTime();
-
-
-  if (timestamp <= Date.now()) {
-
-    status.innerText =
-      "Choose a future time.";
-
-    return;
-  }
-
-
-  try {
-
-    const newMessage =
-      push(
-        ref(
-          database,
-          "scheduledMessages"
-        )
-      );
-
-
-    await set(
-      newMessage,
-      {
-
-        text:
-          text,
-
-        timestamp:
-          timestamp,
-
-        createdBy:
-          user.uid,
-
-        createdAt:
-          Date.now(),
-
-        sent:
-          false
-
-      }
-    );
-
-
-    message.value = "";
-
-    status.innerText =
-      "✅ Message scheduled!";
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-    status.innerText =
-      "Error: " +
-      error.message;
-
-  }
-
-};
-
-
-/* ================================
-   LOAD MESSAGES
-================================ */
-
-function loadMessages() {
-
-  const messagesRef =
-    ref(
-      database,
-      "scheduledMessages"
-    );
-
-
-  onValue(
-    messagesRef,
-    function(snapshot) {
-
-      messages.innerHTML = "";
-
-      const data =
-        snapshot.val();
-
-
-      if (!data) {
-
-        messages.innerHTML =
-          "<p>No messages.</p>";
-
-        return;
-      }
-
-
-      Object.values(data)
-      .forEach(function(item) {
-
-        const div =
-          document.createElement(
-            "div"
-          );
-
-
-        div.className =
-          "message";
-
-
-        const d =
-          new Date(
-            item.timestamp
-          );
-
-
-        div.innerHTML =
-
-          "<b>" +
-          escapeHTML(item.text) +
-          "</b>" +
-
-          "<br>" +
-
-          d.toLocaleString() +
-
-          "<br>" +
-
-          (
-            item.sent
-            ? "🔔 Sent"
-            : "⏳ Scheduled"
-          );
-
-
-        messages.appendChild(div);
-
-      });
-
-    }
+  alert(
+    "NetVital\n\n" +
+    message
   );
 
 }
 
 
-/* ================================
-   PROTECT MESSAGE TEXT
-================================ */
+/* =========================
+   DELETE TIMER
+========================= */
 
-function escapeHTML(text) {
+function deleteTimer(id) {
 
-  const div =
-    document.createElement(
-      "div"
-    );
-
-  div.textContent =
-    text;
-
-  return div.innerHTML;
-
-}
-
-
-/* ================================
-   FOREGROUND MESSAGE
-================================ */
-
-onMessage(
-  messaging,
-  function(payload) {
-
-    console.log(
-      "Message received:",
-      payload
+  const timer =
+    document.getElementById(
+      "timer-" + id
     );
 
 
-    if (
-      payload.notification
-    ) {
+  if (timer) {
 
-      new Notification(
-        payload.notification.title ||
-        "NetVital",
-        {
-
-          body:
-            payload.notification.body ||
-            "New message"
-
-        }
-      );
-
-    }
+    timer.remove();
 
   }
-);
+
+}
 
 </script>
 
